@@ -4,6 +4,8 @@ This FreshRSS extension allows you to cache feeds’ pictures in your own facili
 
 To use it, upload this entire directory to the FreshRSS `./extensions` directory on your server and enable it on the extension panel in FreshRSS. 
 
+There is a Cloudflare worker implementation of the cache utilizing its Cache API. Check this [repo](https://github.com/Victrid/image-cache-worker) (It's can be run on free tier).
+
 ## Configuration settings
 
 -   `cache_url` (default: `https://example.com/pic?url=`): The URL of the image used to load when the user reads the feed article.
