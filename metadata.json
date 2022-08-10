@@ -1,8 +1,8 @@
 {
 	"name": "Image Cache",
 	"author": "Victrid",
-	"description": "Cache feed images on your own facility.",
-	"version": 0.1,
+	"description": "Cache feed images on your own facility or Cloudflare cache.",
+	"version": 0.1.1,
 	"entrypoint": "ImageCache",
 	"type": "user"
 }
