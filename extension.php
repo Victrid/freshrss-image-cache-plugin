@@ -49,18 +49,20 @@ class ImageCacheExtension extends Minz_Extension {
 	}
 	
 	public static function posturl($url,$data){
-        $data  = json_encode($data);    
-        $headerArray =array("Content-type:application/json;charset='utf-8'","Accept:application/json");
+        $data  = json_encode($data);
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST,FALSE);
-        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
-        curl_setopt($curl,CURLOPT_HTTPHEADER,$headerArray);
+		curl_setopt($curl, CURLOPT_HEADER, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array(
+			"Content-Type: application/json;charset='utf-8'",
+			'Content-Length: ' . strlen($data),
+			"Accept: application/json")
+		);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5); 
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 10);
         $output = curl_exec($curl);
         curl_close($curl);
         return json_decode($output, true); 
