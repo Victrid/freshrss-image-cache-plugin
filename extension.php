@@ -97,6 +97,11 @@ final class ImageCacheExtension extends Minz_Extension
         return FreshRSS_Context::userConf()->image_cache_url . $url;
     }
 
+    public static function small($string)
+{
+    return substr($string, 0, 20);
+}
+
     public static function cache_images(string $content): string
     {
         if (empty($content)) {
@@ -104,7 +109,8 @@ final class ImageCacheExtension extends Minz_Extension
         }
         $doc = new DOMDocument();
         libxml_use_internal_errors(true); // prevent tag soup errors from showing
-        $doc->loadHTML(mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'));
+        $encoding = mb_detect_encoding($content);
+        $doc->loadHTML('<!DOCTYPE html><meta charset="'.$encoding.'">'.$content);
         $imgs = $doc->getElementsByTagName('img');
         foreach ($imgs as $img) {
             if ($img->hasAttribute('src')) {
@@ -129,7 +135,8 @@ final class ImageCacheExtension extends Minz_Extension
         }
         $doc = new DOMDocument();
         libxml_use_internal_errors(true); // prevent tag soup errors from showing
-        $doc->loadHTML(mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'));
+        $encoding = mb_detect_encoding($content);
+        $doc->loadHTML('<!DOCTYPE html><meta charset="'.$encoding.'">'.$content);
         $imgs = $doc->getElementsByTagName('img');
         foreach ($imgs as $img) {
             if ($img->hasAttribute('src')) {
