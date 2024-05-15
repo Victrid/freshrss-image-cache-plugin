@@ -1,36 +1,88 @@
-# Image Cache Extension
+# Image Cache Extension for FreshRSS
 
-This FreshRSS extension allows you to cache feeds’ pictures in your own facility.
+This extension allows you to cache images from the feeds in FreshRSS. It helps speed up feed loading times and reduce bandwidth usage by caching images on a server.
 
-To use it, upload this entire directory to the FreshRSS `./extensions` directory on your server and enable it on the extension panel in FreshRSS. 
+## Installation
 
-There is a Cloudflare worker implementation of the cache utilizing its Cache API. Check this [repo](https://github.com/Victrid/image-cache-worker) (It's can be run on free tier).
+1. **Download and Setup**:
+   - Download the zip file from the [Releases page](https://github.com/Victrid/freshrss-image-cache-plugin/releases).
+   - Extract the folder and place it in the `extensions` directory of your FreshRSS installation, ensuring that the `metadata.json` file is in the root of the `imagecache` folder.
+   - Enable the extension through the FreshRSS extension panel.
 
-## Configuration settings
+   After installation, your directory structure should resemble:
 
--   `cache_url` (default: `https://example.com/pic?url=`): The URL of the image used to load when the user reads the feed article.
+   ```
+   extensions/
+   |-- imagecache/
+   |   |-- metadata.json
+   |   |-- imagecache.php
+   |   |-- ...
+   |-- some-other-extension/
+   |-- ...
+   ```
 
--   `post_url` (default: `https://example.com/prepare`): Address used to inform the caching service when FreshRSS fetches a new article.
+## Usage
 
-    The plugin will send a JSON POST request to this address in this format:
+**Note**: This extension does not cache images directly within the FreshRSS instance. Instead, it works with an external cache service to store images.
 
-    ```json
-    {
-        "url": "https://http.cat/418.jpg",
-        "access_token": "YOUR_ACCESS_TOKEN"
-    }
-    ```
+### How It Works
 
--   `access_token` (default: `""`): See the JSON request above.
+The diagram below illustrates the extension's operation:
 
--   `url_encode` (default: `1`): whether to URL-encode (RFC 3986) the proxied URL.
+![ImageCache Workflow](imagecache.svg)
 
-## Important Note
+When proactive caching is enabled, FreshRSS sends a request to your cache service to store the image if a new feed entry includes image URLs. This modifies the image URL so users access the cached version instead of the original source.
 
-Your cache implementation should not rely on the `post`-method, in other words, the `cache_url` should support cache-miss situations.
+### Setting Up a Cache Server
 
-## See Also
+You have two options for setting up your cache server:
 
-[ImageProxy](https://github.com/FreshRSS/Extensions/tree/master/xExtension-ImageProxy) plugin: Don’t need a cache, just proxy? Use ImageProxy plugin instead.
+1. **Self-Hosted Server**:
+   - Use the example provided in [piccache.php.example](piccache.php.example). Rename it to `piccache.php` and place it in your `/path/to/FreshRSS/p` directory.
+   - Update the configuration in `piccache.php` as follows:
 
-This extension is based on ImageProxy plugin, and is licensed under GPLv3.
+     ```php
+     define("CACHE_PLACE_PATH", "/path/to/cache/folder");
+     define("ACCESS_TOKEN", "SoMe_oBsCuRe_aCcEsS_ToKeN");
+     ```
+
+   - (For Docker users) You can build a custom image with the following Dockerfile:
+
+     ```dockerfile
+     FROM freshrss/freshrss:latest
+     
+     COPY piccache.php /var/www/FreshRSS/p/piccache.php
+     ```
+
+   - Configure FreshRSS to use the caching service:
+
+     ```yaml
+     Cache URL: "http://192.168.1.123:4567/piccache.php?url="
+     Enable proactive cache: checked
+     Proactive Cache URL: "http://192.168.1.123:4567/piccache.php"
+     Access Token: "SoMe_oBsCuRe_aCcEsS_ToKeN"
+     ```
+
+   This script is basic and does not handle cleaning up old caches or implementing crawler-detection avoidance. If you need a reliable cache server, consider the cloudflare worker solution below.
+
+2. **Cloudflare Worker**:
+   - If you have limited bandwidth or experience high latency, consider using a [Cloudflare Worker](https://github.com/Victrid/image-cache-worker). This solution caches images on Cloudflare's CDN, which can be set up on their free tier without a custom domain.
+
+## Additional Information
+
+When proactive cache is enabled, the plugin sends a JSON POST request to the cache URL in the following format:
+
+```json
+{
+    "url": "https://http.cat/418.jpg",
+    "access_token": "YOUR_ACCESS_TOKEN"
+}
+```
+
+## Alternatives
+
+Consider the [ImageProxy](https://github.com/FreshRSS/Extensions/tree/master/xExtension-ImageProxy) plugin if you need a simpler solution for proxying images without caching.
+
+## License
+
+This extension is inspired by the ImageProxy plugin and is available under the GPLv3 license.

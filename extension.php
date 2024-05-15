@@ -33,10 +33,6 @@ final class ImageCacheExtension extends Minz_Extension
             FreshRSS_Context::userConf()->image_cache_access_token = self::CACHE_ACCESS_TOKEN;
             $save = true;
         }
-        if (is_null(FreshRSS_Context::userConf()->image_cache_url_encode)) {
-            FreshRSS_Context::userConf()->image_cache_url_encode = self::URL_ENCODE;
-            $save = true;
-        }
         if (is_null(FreshRSS_Context::userConf()->image_cache_post_enabled)) {
             FreshRSS_Context::userConf()->image_cache_post_enabled = self::CACHE_POST_ENABLED;
             $save = true;
@@ -55,7 +51,6 @@ final class ImageCacheExtension extends Minz_Extension
             FreshRSS_Context::userConf()->image_cache_url = Minz_Request::paramString('image_cache_url');
             FreshRSS_Context::userConf()->image_cache_post_url = Minz_Request::paramString('image_cache_post_url');
             FreshRSS_Context::userConf()->image_cache_access_token = Minz_Request::paramString('image_cache_access_token');
-            FreshRSS_Context::userConf()->image_cache_url_encode = Minz_Request::paramString('image_cache_url_encode');
             FreshRSS_Context::userConf()->image_cache_post_enabled = Minz_Request::paramString('image_cache_post_enabled');
             FreshRSS_Context::userConf()->save();
         }
