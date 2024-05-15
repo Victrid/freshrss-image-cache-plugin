@@ -1,35 +1,46 @@
-<form action="<?php echo _url('extension', 'configure', 'e', urlencode($this->getName())); ?>" method="post">
-	<input type="hidden" name="_csrf" value="<?php echo FreshRSS_Auth::csrfToken(); ?>" />
+<?php
+	declare(strict_types=1);
+	/** @var ImageProxyExtension $this */
+?>
+<form action="<?= _url('extension', 'configure', 'e', urlencode($this->getName())) ?>" method="post">
+	<input type="hidden" name="_csrf" value="<?= FreshRSS_Auth::csrfToken() ?>" />
 	<h3>User fetch settings</h3>
 	<div class="form-group">
-		<label class="group-name" for="image_cache_url"><?php echo _t('ext.imagecache.cache_url'); ?></label>
+		<label class="group-name" for="image_cache_url"><?= _t('ext.imagecache.cache_url') ?></label>
 		<div class="group-controls">
-			<input type="url" name="image_cache_url" id="image_cache_url" value="<?php echo FreshRSS_Context::$user_conf->image_cache_url; ?>">
+			<input type="url" name="image_cache_url" id="image_cache_url" value="<?= FreshRSS_Context::userConf()->image_cache_url ?>">
 		</div>
 	</div>
 	<div class="form-group">
-		<label class="group-name" for="image_cache_url_encode"><?php echo _t('ext.imagecache.url_encode'); ?></label>
+		<label class="group-name" for="image_cache_url_encode"><?= _t('ext.imagecache.url_encode') ?></label>
 		<div class="group-controls">
-			<input type="checkbox" name="image_cache_url_encode" id="image_cache_url_encode" value="1" <?php echo (FreshRSS_Context::$user_conf->image_cache_url_encode ? 'checked' : ''); ?>>
+			<input type="checkbox" name="image_cache_url_encode" id="image_cache_url_encode" value="1" <?= FreshRSS_Context::userConf()->image_cache_url_encode ? 'checked' : '' ?>>
 		</div>
 	</div>
-	<h3>FreshRSS notification settings</h3>
-	<div class="form-group">
-		<label class="group-name" for="image_cache_post_url"><?php echo _t('ext.imagecache.post_url'); ?></label>
+	<h3><?= _t('ext.imagecache.proactive_cache') ?></h3>
+    <p><?= _t('ext.imagecache.proactive_cache_desc') ?></p>
+    <div class="form-group">
+		<label class="group-name" for="image_cache_post_enabled"><?= _t('ext.imagecache.proactive_cache_enabled') ?></label>
 		<div class="group-controls">
-			<input type="url" name="image_cache_post_url" id="image_cache_post_url" value="<?php echo FreshRSS_Context::$user_conf->image_cache_post_url; ?>">
+			<input type="checkbox" name="image_cache_post_enabled" id="image_cache_post_enabled" value="1" <?= FreshRSS_Context::userConf()->image_cache_post_enabled ? 'checked' : '' ?>>
 		</div>
 	</div>
 	<div class="form-group">
-		<label class="group-name" for="image_cache_access_token"><?php echo _t('ext.imagecache.access_token'); ?></label>
+		<label class="group-name" for="image_cache_post_url"><?= _t('ext.imagecache.post_url') ?></label>
 		<div class="group-controls">
-			<input type="text" name="image_cache_access_token" id="image_cache_access_token" value="<?php echo FreshRSS_Context::$user_conf->image_cache_access_token; ?>">
+			<input type="url" name="image_cache_post_url" id="image_cache_post_url" value="<?= FreshRSS_Context::userConf()->image_cache_post_url ?>">
+		</div>
+	</div>
+	<div class="form-group">
+		<label class="group-name" for="image_cache_access_token"><?= _t('ext.imagecache.access_token'); ?></label>
+		<div class="group-controls">
+			<input type="text" name="image_cache_access_token" id="image_cache_access_token" value="<?= FreshRSS_Context::userConf()->image_cache_access_token ?>">
 		</div>
 	</div>
 	<div class="form-group form-actions">
 		<div class="group-controls">
-			<button type="submit" class="btn btn-important"><?php echo _t('gen.action.submit'); ?></button>
-			<button type="reset" class="btn"><?php echo _t('gen.action.cancel'); ?></button>
+			<button type="submit" class="btn btn-important"><?= _t('gen.action.submit') ?></button>
+			<button type="reset" class="btn"><?= _t('gen.action.cancel') ?></button>
 		</div>
 	</div>
 </form>
