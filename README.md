@@ -65,6 +65,8 @@ You have two options for setting up your cache server:
 
    This script is basic and does not handle cleaning up old caches or implementing crawler-detection avoidance. If you need a reliable cache server, consider the cloudflare worker solution below.
 
+   Alternatively, if you experience problems with the reference `piccache.php`, a different service implementation can be used: [freshrss-image-cache-service-rs](https://github.com/s373r/freshrss-image-cache-service-rs).
+
 2. **Cloudflare Worker**:
    - If you have limited bandwidth or experience high latency, consider using a [Cloudflare Worker](https://github.com/Victrid/image-cache-worker). This solution caches images on Cloudflare's CDN, which can be set up on their free tier without a custom domain.
 
