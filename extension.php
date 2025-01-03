@@ -77,9 +77,14 @@ final class ImageCacheExtension extends Minz_Extension
         return json_decode($output, true);
     }
 
+    public static function is_remote_url(string $url): bool
+    {
+	    return strcmp(substr(strtolower($url), 0, 5), "data:") != 0;
+    }
+
     public static function send_proactive_cache_request(string $url): mixed
     {
-        if (FreshRSS_Context::userConf()->image_cache_post_enabled) {
+        if (FreshRSS_Context::userConf()->image_cache_post_enabled && self::is_remote_url($url)) {
             $post_url = FreshRSS_Context::userConf()->image_cache_post_url;
             return self::curlPostRequest($post_url, array("access_token" => FreshRSS_Context::userConf()->image_cache_access_token, "url" => $url));
         }
@@ -88,6 +93,9 @@ final class ImageCacheExtension extends Minz_Extension
 
     public static function getCacheImageUri(string $url): string
     {
+        if (!self::is_remote_url($url)) {
+            return $url;
+        }
         $url = rawurlencode($url);
         return FreshRSS_Context::userConf()->image_cache_url . $url;
     }
