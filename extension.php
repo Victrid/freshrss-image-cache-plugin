@@ -131,6 +131,12 @@ final class ImageCacheExtension extends Minz_Extension
         return $content;
     }
 
+
+    public static function getSrcSetUris(array $matches): string {
+        return str_replace($matches[1], self::getCacheImageUri($matches[1]), $matches[0]);
+    }
+
+
     public static function swapUris(string $content): string
     {
         if (empty($content)) {
@@ -143,16 +149,22 @@ final class ImageCacheExtension extends Minz_Extension
         $imgs = $doc->getElementsByTagName('img');
         foreach ($imgs as $img) {
             if ($img->hasAttribute('src')) {
-                $newSrc = self::getCacheImageUri($img->getAttribute('src'));
+                $src = $img->getAttribute('src');
+                $newSrc = self::getCacheImageUri($src);
+                /*
+                Due to the URL change, FreshRSS is not aware of already rendered enclosures.
+                Adding data-xextension-imagecache-original-src / srcset ensures that original URLs are present in the content for the renderer check FreshRSS_Entry->containsLink.
+                */
+                $img->setAttribute('data-xextension-imagecache-original-src', $src);
                 $img->setAttribute('src', $newSrc);
             }
             if ($img->hasAttribute('srcset')) {
-                $newSrcSet = preg_replace_callback('/(?:([^\s,]+)(\s*(?:\s+\d+[wx])(?:,\s*)?))/',
-                    function (array $matches): string {
-                        return str_replace($matches[1], self::getCacheImageUri($matches[1]), $matches[0]);
-                    }
-                    , $img->getAttribute('srcset'));
-                $img->setAttribute('srcset', $newSrcSet);
+                $srcSet = $img->getAttribute('srcset');
+                $newSrcSet = preg_replace_callback('/(?:([^\s,]+)(\s*(?:\s+\d+[wx])(?:,\s*)?))/', fn (array $matches) => self::getSrcSetUris($matches), $srcSet);
+                if ($newSrcSet != null) {
+                    $img->setAttribute('data-xextension-imagecache-original-srcset', $srcSet);
+                    $img->setAttribute('srcset', $newSrcSet);
+                }
             }
         }
         return $doc->saveHTML();
