@@ -56,7 +56,7 @@ final class ImageCacheExtension extends Minz_Extension
         }
     }
 
-    public static function curlPostRequest(string $url, array $data): mixed
+    public static function curlPostRequest(string $url, array $data): void
     {
         $data = json_encode($data);
         $curl = curl_init();
@@ -74,7 +74,6 @@ final class ImageCacheExtension extends Minz_Extension
         curl_setopt($curl, CURLOPT_TIMEOUT, 10);
         $output = curl_exec($curl);
         curl_close($curl);
-        return json_decode($output, true);
     }
 
     public static function is_remote_url(string $url): bool
