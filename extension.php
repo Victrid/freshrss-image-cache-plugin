@@ -56,7 +56,7 @@ final class ImageCacheExtension extends Minz_Extension
         }
     }
 
-    public static function curlPostRequest(string $url, array $data): void
+    public static function curlPostRequest(string $url, array $data): bool
     {
         $data = json_encode($data);
         $curl = curl_init();
@@ -74,6 +74,10 @@ final class ImageCacheExtension extends Minz_Extension
         curl_setopt($curl, CURLOPT_TIMEOUT, 10);
         $output = curl_exec($curl);
         curl_close($curl);
+        if ($output === false) {
+            return false;
+        }
+        return true;
     }
 
     public static function is_remote_url(string $url): bool
@@ -81,7 +85,7 @@ final class ImageCacheExtension extends Minz_Extension
 	    return strcmp(substr(strtolower($url), 0, 5), "data:") != 0;
     }
 
-    public static function send_proactive_cache_request(string $url): mixed
+    public static function send_proactive_cache_request(string $url): bool
     {
         if (FreshRSS_Context::userConf()->image_cache_post_enabled && self::is_remote_url($url)) {
             $post_url = FreshRSS_Context::userConf()->image_cache_post_url;
