@@ -10,8 +10,6 @@ function join_paths(...$paths)
     return preg_replace('~[/\\\\]+~', DIRECTORY_SEPARATOR, implode(DIRECTORY_SEPARATOR, $paths));
 }
 
-;
-
 function get_name($url)
 {
     $tmp_path = join_paths(CACHE_PLACE_PATH, "piccache");
@@ -39,7 +37,13 @@ function get($url)
 function set($url)
 {
     $file_name = get_name($url);
-    $content = file_get_contents($url);
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 5
+        ]
+    ]);
+    $content = @file_get_contents($url, false, $context);
+    if (empty($content)) return null;
     file_put_contents($file_name, $content);
     return $file_name;
 }
@@ -58,7 +62,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         http_response_code(400);
         exit();
     }
-    set($post['url']);
+    $file = set($post['url']);
+    if (!$file) {
+        http_response_code(404);
+        header('Content-Type: application/json; charset=utf-8');
+        echo '{"status": "FAILED_TO_FETCH"}' . PHP_EOL;
+        exit();
+    }
     header('Content-Type: application/json; charset=utf-8');
     echo '{"status": "OK"}' . PHP_EOL;
     exit();
@@ -71,6 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $file = get($url);
     header("X-Piccache-Status: " . ($file ? "HIT" : "MISS"));
     if (!$file) $file = set($url);
+    if (!$file) {
+        http_response_code(404);
+        exit();
+    }
     $finfo = finfo_open(FILEINFO_MIME);
     header('Content-Type: ' . finfo_file($finfo, $file));
     finfo_close($finfo);
@@ -82,4 +96,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     http_response_code(405);
     exit();
 }
-?>
