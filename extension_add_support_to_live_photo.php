@@ -100,13 +100,8 @@ final class ImageCacheExtension extends Minz_Extension
         return FreshRSS_Context::userConf()->image_cache_url . $url;
     }
 
-    public static function small($string)
-    {
-        return substr($string, 0, 20);
-    }
-
     /**
-     * 缓存图片、视频和 Live Photo 资源
+     * 仅缓存资源（发送缓存请求），不替换 URL
      */
     public static function cache_images(string $content): string
     {
@@ -114,7 +109,7 @@ final class ImageCacheExtension extends Minz_Extension
             return $content;
         }
         $doc = new DOMDocument();
-        libxml_use_internal_errors(true); // prevent tag soup errors from showing
+        libxml_use_internal_errors(true);
         $encoding = mb_detect_encoding($content);
         $doc->loadHTML('<!DOCTYPE html><meta charset="'.$encoding.'">'.$content);
 
@@ -132,7 +127,7 @@ final class ImageCacheExtension extends Minz_Extension
                     },
                     $img->getAttribute('srcset'));
             }
-            // 处理 Live Photo（通常通过 data-livephoto 属性指定 .mov 文件）
+            // 处理 Live Photo
             if ($img->hasAttribute('data-livephoto')) {
                 self::send_proactive_cache_request($img->getAttribute('data-livephoto'));
             }
@@ -141,15 +136,12 @@ final class ImageCacheExtension extends Minz_Extension
         // 处理 <video> 标签
         $videos = $doc->getElementsByTagName('video');
         foreach ($videos as $video) {
-            // 处理 poster 属性
             if ($video->hasAttribute('poster')) {
                 self::send_proactive_cache_request($video->getAttribute('poster'));
             }
-            // 处理 src 属性
             if ($video->hasAttribute('src')) {
                 self::send_proactive_cache_request($video->getAttribute('src'));
             }
-            // 处理 <source> 子标签
             $sources = $video->getElementsByTagName('source');
             foreach ($sources as $source) {
                 if ($source->hasAttribute('src')) {
@@ -170,12 +162,8 @@ final class ImageCacheExtension extends Minz_Extension
         return $thumbnail;
     }
 
-    public static function getSrcSetUris(array $matches): string {
-        return str_replace($matches[1], self::getCacheImageUri($matches[1]), $matches[0]);
-    }
-
     /**
-     * 替换图片、视频和 Live Photo 的 URL 为缓存 URL
+     * 仅替换 URL，不发送缓存请求
      */
     public static function swapUris(string $content): string
     {
@@ -183,7 +171,7 @@ final class ImageCacheExtension extends Minz_Extension
             return $content;
         }
         $doc = new DOMDocument();
-        libxml_use_internal_errors(true); // prevent tag soup errors from showing
+        libxml_use_internal_errors(true);
         $encoding = mb_detect_encoding($content);
         $doc->loadHTML('<!DOCTYPE html><meta charset="'.$encoding.'">'.$content);
 
@@ -192,52 +180,67 @@ final class ImageCacheExtension extends Minz_Extension
         foreach ($imgs as $img) {
             if ($img->hasAttribute('src')) {
                 $src = $img->getAttribute('src');
-                $newSrc = self::getCacheImageUri($src);
-                $img->setAttribute('data-xextension-imagecache-original-src', $src);
-                $img->setAttribute('src', $newSrc);
+                if (strpos($src, FreshRSS_Context::userConf()->image_cache_url) === false) { // 避免重复替换
+                    $newSrc = self::getCacheImageUri($src);
+                    $img->setAttribute('data-xextension-imagecache-original-src', $src);
+                    $img->setAttribute('src', $newSrc);
+                }
             }
             if ($img->hasAttribute('srcset')) {
                 $srcSet = $img->getAttribute('srcset');
-                $newSrcSet = preg_replace_callback('/(?:([^\s,]+)(\s*(?:\s+\d+[wx])(?:,\s*)?))/', fn (array $matches) => self::getSrcSetUris($matches), $srcSet);
+                $newSrcSet = preg_replace_callback('/(?:([^\s,]+)(\s*(?:\s+\d+[wx])(?:,\s*)?))/',
+                    function (array $matches) {
+                        $url = $matches[1];
+                        if (strpos($url, FreshRSS_Context::userConf()->image_cache_url) === false) { // 避免重复替换
+                            return str_replace($url, self::getCacheImageUri($url), $matches[0]);
+                        }
+                        return $matches[0];
+                    },
+                    $srcSet);
                 if ($newSrcSet != null) {
                     $img->setAttribute('data-xextension-imagecache-original-srcset', $srcSet);
                     $img->setAttribute('srcset', $newSrcSet);
                 }
             }
-            // 处理 Live Photo（替换 data-livephoto 属性）
+            // 处理 Live Photo
             if ($img->hasAttribute('data-livephoto')) {
                 $livePhotoUrl = $img->getAttribute('data-livephoto');
-                $newLivePhotoUrl = self::getCacheImageUri($livePhotoUrl);
-                $img->setAttribute('data-xextension-imagecache-original-livephoto', $livePhotoUrl);
-                $img->setAttribute('data-livephoto', $newLivePhotoUrl);
+                if (strpos($livePhotoUrl, FreshRSS_Context::userConf()->image_cache_url) === false) { // 避免重复替换
+                    $newLivePhotoUrl = self::getCacheImageUri($livePhotoUrl);
+                    $img->setAttribute('data-xextension-imagecache-original-livephoto', $livePhotoUrl);
+                    $img->setAttribute('data-livephoto', $newLivePhotoUrl);
+                }
             }
         }
 
         // 处理 <video> 标签
         $videos = $doc->getElementsByTagName('video');
         foreach ($videos as $video) {
-            // 处理 poster 属性
             if ($video->hasAttribute('poster')) {
                 $poster = $video->getAttribute('poster');
-                $newPoster = self::getCacheImageUri($poster);
-                $video->setAttribute('data-xextension-imagecache-original-poster', $poster);
-                $video->setAttribute('poster', $newPoster);
+                if (strpos($poster, FreshRSS_Context::userConf()->image_cache_url) === false) { // 避免重复替换
+                    $newPoster = self::getCacheImageUri($poster);
+                    $video->setAttribute('data-xextension-imagecache-original-poster', $poster);
+                    $video->setAttribute('poster', $newPoster);
+                }
             }
-            // 处理 src 属性
             if ($video->hasAttribute('src')) {
                 $src = $video->getAttribute('src');
-                $newSrc = self::getCacheImageUri($src);
-                $video->setAttribute('data-xextension-imagecache-original-src', $src);
-                $video->setAttribute('src', $newSrc);
+                if (strpos($src, FreshRSS_Context::userConf()->image_cache_url) === false) { // 避免重复替换
+                    $newSrc = self::getCacheImageUri($src);
+                    $video->setAttribute('data-xextension-imagecache-original-src', $src);
+                    $video->setAttribute('src', $newSrc);
+                }
             }
-            // 处理 <source> 子标签
             $sources = $video->getElementsByTagName('source');
             foreach ($sources as $source) {
                 if ($source->hasAttribute('src')) {
                     $src = $source->getAttribute('src');
-                    $newSrc = self::getCacheImageUri($src);
-                    $source->setAttribute('data-xextension-imagecache-original-src', $src);
-                    $source->setAttribute('src', $newSrc);
+                    if (strpos($src, FreshRSS_Context::userConf()->image_cache_url) === false) { // 避免重复替换
+                        $newSrc = self::getCacheImageUri($src);
+                        $source->setAttribute('data-xextension-imagecache-original-src', $src);
+                        $source->setAttribute('src', $newSrc);
+                    }
                 }
             }
         }
@@ -250,7 +253,9 @@ final class ImageCacheExtension extends Minz_Extension
         if (empty($thumbnail['url'])) {
             return $thumbnail;
         }
-        $thumbnail['url'] = self::getCacheImageUri($thumbnail['url']);
+        if (strpos($thumbnail['url'], FreshRSS_Context::userConf()->image_cache_url) === false) { // 避免重复替换
+            $thumbnail['url'] = self::getCacheImageUri($thumbnail['url']);
+        }
         return $thumbnail;
     }
 
